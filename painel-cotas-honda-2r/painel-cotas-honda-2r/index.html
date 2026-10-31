@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cotas Vendidas 2R</title><style>html{color-scheme:light}body{margin:0}</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabeçalho fixo com seletor de mês e corte; abas Painel, Mensal, Importar, Metas; cartões de indicadores no topo, tabela por empresa, depois gráficos em grade */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#14202b; --muted:#5b6b7a; --line:#dbe2e9; --soft:#eaf0f6;
+  --accent:#0b5cab; --accent-ink:#ffffff; --teal:#14808a; --good:#1a7f4b; --warn:#a85f00; --bad:#c0392b;
+  --good-bg:#e1f3e9; --warn-bg:#fbefd9; --bad-bg:#fbe5e2;
+  --font:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1620; --surface:#16212d; --ink:#e7eef5; --muted:#93a4b5; --line:#263443; --soft:#1c2a39;
+  --accent:#5aa7f0; --accent-ink:#06121f; --teal:#4fc3c9; --good:#4cc38a; --warn:#e3a43c; --bad:#ef7a6b;
+  --good-bg:#14352a; --warn-bg:#3b2d12; --bad-bg:#40201c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1620; --surface:#16212d; --ink:#e7eef5; --muted:#93a4b5; --line:#263443; --soft:#1c2a39;
+  --accent:#5aa7f0; --accent-ink:#06121f; --teal:#4fc3c9; --good:#4cc38a; --warn:#e3a43c; --bad:#ef7a6b;
+  --good-bg:#14352a; --warn-bg:#3b2d12; --bad-bg:#40201c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.wrap{max-width:1280px;margin:0 auto}
+header.top{padding:18px 0 10px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+h1{font-size:22px;margin:0;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:12.5px;margin-top:2px;font-family:var(--mono)}
+.ctrls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chips,.seg{display:flex;flex-wrap:wrap;gap:6px}
+.chip,.seg button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:5px 11px;border-radius:999px;cursor:pointer}
+.seg{gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;border-radius:0;padding:6px 12px}
+.chip[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip:focus-visible,.seg button:focus-visible,.tab:focus-visible,button.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+nav.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:6px 0 18px;overflow-x:auto}
+.tab{font:inherit;font-weight:600;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:10px 14px;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kpi .v{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .n{font-size:12px;color:var(--muted);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.card h2{font-size:14.5px;margin:0 0 2px;font-weight:700}
+.card .hint{font-size:12px;color:var(--muted);margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:12px;margin-top:12px}
+.chartbox{position:relative;height:300px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;background:var(--soft)}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+tbody tr:hover td{background:var(--soft)}
+tfoot td{font-weight:700;border-top:2px solid var(--line);background:var(--soft)}
+td.emp b{font-weight:700} td.emp span{color:var(--muted);font-size:12px;margin-left:6px}
+.pill{display:inline-block;min-width:62px;text-align:center;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.good{background:var(--good-bg);color:var(--good)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
+.neg{color:var(--bad)} .pos{color:var(--good)}
+.bar{display:inline-block;width:90px;height:8px;background:var(--soft);border-radius:4px;vertical-align:middle;overflow:hidden;margin-right:8px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:28px 16px;text-align:center;background:var(--surface);cursor:pointer}
+.drop.on{border-color:var(--accent);background:var(--soft)}
+.drop b{font-size:15px}
+button.btn{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:8px 14px;cursor:pointer}
+button.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.msg{padding:9px 12px;border-radius:8px;font-size:13px;margin:10px 0}
+.msg.ok{background:var(--good-bg);color:var(--good)} .msg.warn{background:var(--warn-bg);color:var(--warn)} .msg.bad{background:var(--bad-bg);color:var(--bad)} .msg.info{background:var(--soft);color:var(--ink)}
+input[type=number]{font:inherit;width:92px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+.rules{margin:0;padding-left:18px;color:var(--muted);font-size:13px} .rules li{margin:3px 0}
+.foot{margin-top:22px;font-size:12px;color:var(--muted)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.heat td.h{text-align:center;font-weight:600}
+@media (max-width:560px){.kpi .v{font-size:22px}.chartbox{height:260px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Cotas Vendidas 2R · Consórcio Honda</h1>
+      <div class="sub" id="subtitle">Grupo Cometa · 14 concessionárias</div>
+    </div>
+    <div class="ctrls">
+      <div class="chips" id="months" role="group" aria-label="Mês"></div>
+      <button type="button" class="chip" id="exp" title="Baixa um arquivo com todos os dados para publicar no repositório">Exportar dados</button>
+      <div class="seg" id="corte" role="group" aria-label="Corte de datas">
+        <button type="button" data-m="D1" aria-pressed="true" title="Considera as vendas até o dia anterior à extração">Até D-1</button>
+        <button type="button" data-m="TUDO" aria-pressed="false" title="Considera todas as vendas das planilhas">Todas as vendas</button>
+      </div>
+    </div>
+  </header>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-t="painel" aria-selected="true">Painel</button>
+    <button class="tab" role="tab" data-t="mensal" aria-selected="false">Evolução mensal</button>
+    <button class="tab" role="tab" data-t="importar" aria-selected="false">Importar IHS</button>
+    <button class="tab" role="tab" data-t="metas" aria-selected="false">Metas</button>
+  </nav>
+
+  <section id="v-painel"></section>
+  <section id="v-mensal" hidden></section>
+  <section id="v-importar" hidden></section>
+  <section id="v-metas" hidden></section>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+/*PARSE_START*/
+const EMP=["AF","AN","BL","CA","CG","CO","JP","MA","OP","PB","PL","SG","TB","TF"];
+const NOME={AF:"Alta Floresta",AN:"Ananindeua",BL:"Belém",CA:"Cáceres",CG:"Campo Grande",CO:"Colíder",JP:"Ji-Paraná",MA:"Manaus",OP:"Ouro Preto",PB:"Paranaíba",PL:"Pontes e Lacerda",SG:"São Gabriel",TB:"Tabatinga",TF:"Tefé"};
+const NAMEKEY=[["ALTA FLORESTA","AF"],["ANANINDEUA","AN"],["BELEM","BL"],["CACERES","CA"],["CAMPO G","CG"],["COLIDER","CO"],["JI-PARANA","JP"],["MANAUS","MA"],["OUROPRETO","OP"],["OURO PRETO","OP"],["PARANAIBA","PB"],["PONTESLACERDA","PL"],["PONTES","PL"],["SAO GABRIEL","SG"],["TABATINGA","TB"],["TEFE","TF"]];
+function norm(s){return String(s==null?"":s).normalize("NFKD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim().toUpperCase();}
+function parseAOA(aoa){
+  let hdate=null,htime=null,name=null;
+  for(let i=0;i<Math.min(aoa.length,4);i++){
+    for(const c of (aoa[i]||[])){
+      if(typeof c!=="string")continue;
+      let m=c.match(/Data:\s*(\d{2})\/(\d{2})\/(\d{4})/); if(m)hdate=m[3]+"-"+m[2]+"-"+m[1];
+      m=c.match(/Hora:\s*([\d:]+)/); if(m)htime=m[1];
+      if(i===2&&/COMETA/i.test(c))name=c;
+    }
+  }
+  let hi=-1;
+  for(let i=0;i<aoa.length;i++){ if(norm((aoa[i]||[])[0])==="DT VENDA"){hi=i;break;} }
+  if(hi<0)return {error:"Cabeçalho 'Dt Venda' não encontrado",hdate,htime,name,rows:[]};
+  const H=(aoa[hi]||[]).map(norm); const ix=k=>H.indexOf(k);
+  const iP=ix("PROPOSTA"),iD=ix("DIGITO"),iO=ix("ORIGEM DO CONTRATO"),iPl=ix("PLANO"),iT=ix("TIPO DE CONTRATO"),iG=ix("GRUPO"),iC=ix("COTA");
+  if(iO<0||iPl<0)return {error:"Colunas 'Origem do Contrato' ou 'Plano' não encontradas",hdate,htime,name,rows:[]};
+  const rows=[];
+  for(let i=hi+1;i<aoa.length;i++){
+    const r=aoa[i]||[]; const a=r[0];
+    if(typeof a!=="string")continue;
+    const m=a.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if(!m)continue;
+    rows.push({d:m[3]+"-"+m[2]+"-"+m[1],prop:r[iP],dig:r[iD],g:r[iG],c:r[iC],tipo:norm(r[iT]),orig:norm(r[iO]),plano:norm(r[iPl])});
+  }
+  return {hdate,htime,name,rows};
+}
+function empFromName(name){const n=norm(name);for(const [k,c] of NAMEKEY){if(n.includes(k))return c;}return null;}
+function empFromFile(fn){const m=String(fn).toUpperCase().match(/(?:^|[^A-Z])([A-Z]{2})(?:\s*\(\d+\))?\.XLSX?$/);return m&&EMP.includes(m[1])?m[1]:null;}
+function aggregate(parsed){ // parsed: [{emp, rows}] -> {dias:{iso:{emp:[v,e,m,n]}}, dup:{emp:n}}
+  const dias={},dup={};
+  for(const p of parsed){
+    const seen=new Set();
+    for(const r of p.rows){
+      const k=r.prop+"-"+r.dig; if(seen.has(k))dup[p.emp]=(dup[p.emp]||0)+1; seen.add(k);
+      const isE=r.orig==="E-COMMERCE", isM=r.plano==="MOTORES E MAQUINAS";
+      const d=dias[r.d]||(dias[r.d]={}); const a=d[p.emp]||(d[p.emp]=[0,0,0,0]);
+      a[3]++; if(isE)a[1]++; else if(isM)a[2]++; else a[0]++;
+    }
+  }
+  return {dias,dup};
+}
+/*PARSE_END*/
+
+/* ---------- estado ---------- */
+const MESES_PT=["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
+const S={months:{},sel:null,modo:"D1",tab:"painel",db:null,canWrite:null,loaded:false,dbNote:"",imp:null,charts:{}};
+const $=id=>document.getElementById(id);
+const fmt=n=>n==null||isNaN(n)?"–":Math.round(n).toLocaleString("pt-BR");
+const pct=(a,b)=>b>0?(a/b*100):null;
+const fp=v=>v==null?"–":v.toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})+"%";
+const fd=n=>(n>0?"+":"")+fmt(n);
+const dim=(y,m)=>new Date(y,m,0).getDate();
+const isoAdd=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+const br=iso=>iso?iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(0,4):"";
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ---------- cálculo ---------- */
+function calc(m,modo){
+  const out={emp:{},tot:{meta:0,ideal:0,real:0,ecom:0,mm:0,pos:0},serie:null,info:{}};
+  const hasD=m.diario&&Object.keys(m.diario).length>0;
+  let cut=null,days=[];
+  if(hasD){
+    days=Object.keys(m.diario).sort();
+    cut=(modo==="D1"&&m.extracao&&m.extracao.data)?isoAdd(m.extracao.data,-1):days[days.length-1];
+  }
+  for(const c of EMP){
+    const e={meta:+((m.meta||{})[c])||0,ideal:+((m.ideal||{})[c])||0,real:0,ecom:0,mm:0,pos:0};
+    if(hasD){
+      for(const d of days){const a=m.diario[d][c]; if(!a)continue; if(d<=cut){e.real+=a[0];e.ecom+=a[1];e.mm+=a[2];}else e.pos+=a[0];}
+    }else{e.real=+((m.realizado||{})[c])||0;e.ecom=+((m.ecom||{})[c])||0;e.mm=+((m.mm||{})[c])||0;}
+    out.emp[c]=e; for(const k in out.tot)out.tot[k]+=e[k];
+  }
+  const nd=dim(m.ano,m.mes);
+  if(hasD){
+    const lim=days.filter(d=>d<=cut); const daily=[],cum=[];let acc=0;
+    for(let i=1;i<=nd;i++){const iso=m.id+"-"+String(i).padStart(2,"0"); if(iso>cut)break;
+      let v=0; const dd=m.diario[iso]; if(dd)for(const c of EMP)if(dd[c])v+=dd[c][0]; acc+=v; daily.push(v);cum.push(acc);}
+    out.serie={daily,cum,nd};
+    out.info={cut,elapsed:daily.length,nd,proj:daily.length>0?out.tot.real/daily.length*nd:null,hasD:true};
+  }else out.info={nd,hasD:false};
+  return out;
+}
+function tone(p){return p==null?"":p>=100?"good":p>=85?"warn":"bad";}
+const arrow=p=>p==null?"":p>=100?"▲ ":"▼ ";
+function cur(){return S.months[S.sel];}
+
+/* ---------- persistência ---------- */
+const timers={};
+async function persist(id,delay=0){
+  const m=S.months[id]; if(!m||!S.db)return;
+  clearTimeout(timers[id]);
+  timers[id]=setTimeout(async()=>{
+    try{ await S.db.doc("meses/"+id).set(JSON.parse(JSON.stringify(m))); note("");}
+    catch(e){ note("Não foi possível gravar ("+(e&&e.code||"erro")+"). A alteração vale só nesta visita."); }
+  },delay);
+}
+function note(t){S.dbNote=t;const f=$("foot");f.textContent=t||"";}
+
+/* ---------- gráficos ---------- */
+function mkChart(id,cfg){
+  if(typeof Chart!=="undefined"&&!Chart.__f){Chart.defaults.font.family='"Public Sans",system-ui,sans-serif';Chart.__f=1;}
+  if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}
+  const el=$(id); if(!el||typeof Chart==="undefined")return;
+  S.charts[id]=new Chart(el,cfg);
+}
+function baseOpts(extra){
+  const ink=css("--muted"),line=css("--line");
+  const o={responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{labels:{color:ink,boxWidth:12,font:{family:"Public Sans",size:12}}},tooltip:{callbacks:{}}},
+    scales:{x:{ticks:{color:ink,font:{size:11}},grid:{color:line}},y:{ticks:{color:ink,font:{size:11}},grid:{color:line},beginAtZero:true}}};
+  return Object.assign(o,extra||{});
+}
+
+/* ---------- vistas ---------- */
+function renderMonths(){
+  const ids=Object.keys(S.months).sort(); const box=$("months"); box.innerHTML="";
+  ids.forEach(id=>{const m=S.months[id];const b=document.createElement("button");b.type="button";b.className="chip";
+    b.textContent=MESES_PT[m.mes-1].slice(0,3)+"/"+String(m.ano).slice(2);b.setAttribute("aria-pressed",String(id===S.sel));
+    b.onclick=()=>{S.sel=id;renderAll();};box.appendChild(b);});
+}
+function renderSub(){
+  const m=cur(); if(!m){$("subtitle").textContent="Grupo Cometa · 14 concessionárias";return;}
+  const c=calc(m,S.modo); let t=MESES_PT[m.mes-1]+" "+m.ano+" · ";
+  if(c.info.hasD){t+="vendas até "+br(c.info.cut)+(S.modo==="D1"?" (D-1)":"")+" · extração IHS "+br(m.extracao&&m.extracao.data)+(m.extracao&&m.extracao.hora?" "+m.extracao.hora.slice(0,5):"");}
+  else t+="valores fechados da planilha COTAS VENDIDAS 2026";
+  $("subtitle").textContent=t;
+}
+function renderPainel(){
+  const v=$("v-painel"); const m=cur();
+  if(!S.loaded&&!m){v.innerHTML='<div class="empty">Carregando dados…</div>';return;}
+  if(!m){v.innerHTML='<div class="empty"><b>Nenhum mês carregado ainda.</b><br>Use a aba <b>Importar IHS</b> e solte as 14 planilhas de vendas diárias para montar o painel.</div>';return;}
+  const c=calc(m,S.modo),t=c.tot,pI=pct(t.real,t.ideal),pM=pct(t.real,t.meta);
+  const saldo=t.meta-t.real;
+  let h='<div class="kpis">';
+  h+=`<div class="kpi"><div class="l">Realizado</div><div class="v">${fmt(t.real)}</div><div class="n">cotas válidas (sem e-commerce e Motores e Máquinas)</div></div>`;
+  h+=`<div class="kpi"><div class="l">Meta do mês</div><div class="v">${fmt(t.meta)}</div><div class="n">${fp(pM)} atingido · saldo ${fmt(Math.max(saldo,0))}</div></div>`;
+  h+=`<div class="kpi"><div class="l">Meta ideal</div><div class="v">${fmt(t.ideal)}</div><div class="n"><span class="pill ${tone(pI)}">${fp(pI)}</span> da meta ideal</div></div>`;
+  h+=`<div class="kpi"><div class="l">Desvio vs. ideal</div><div class="v ${t.real-t.ideal<0?"neg":"pos"}">${fd(t.real-t.ideal)}</div><div class="n">desvio real vs. meta: ${fd(t.real-t.meta)}</div></div>`;
+  if(c.info.hasD){
+    const last=c.serie.daily.length?c.serie.daily[c.serie.daily.length-1]:0;
+    h+=`<div class="kpi"><div class="l">Projeção do mês</div><div class="v">${fmt(c.info.proj)}</div><div class="n">ritmo linear de ${(t.real/c.info.elapsed).toLocaleString("pt-BR",{maximumFractionDigits:1})}/dia · ${fp(pct(c.info.proj,t.meta))} da meta</div></div>`;
+    h+=`<div class="kpi"><div class="l">Último dia (${br(c.info.cut).slice(0,5)})</div><div class="v">${fmt(last)}</div><div class="n">${t.pos>0?fmt(t.pos)+" venda(s) após o corte, fora do realizado":"vendas do último dia considerado"}</div></div>`;
+  }
+  h+='</div>';
+  h+='<div class="card"><h2>Realizado por concessionária</h2><p class="hint">Desvio = realizado − meta. % = realizado ÷ meta. A cor da pílula segue o % da meta ideal: verde ≥ 100%, âmbar ≥ 85%, vermelho abaixo.</p><div class="tablewrap"><table><thead><tr><th>Empresa</th><th>Meta</th><th>Meta ideal</th><th>Realizado</th><th>Desvio ideal</th><th>Desvio real</th><th>% real ideal</th><th>% real mês</th><th class="l">Progresso</th><th>E-commerce</th><th>Motores e Máq.</th></tr></thead><tbody>';
+  for(const k of EMP){const e=c.emp[k],a=pct(e.real,e.ideal),b=pct(e.real,e.meta);
+    h+=`<tr><td class="emp"><b>${k}</b><span>${esc(NOME[k])}</span></td><td>${fmt(e.meta)}</td><td>${fmt(e.ideal)}</td><td><b>${fmt(e.real)}</b></td><td class="${e.real-e.ideal<0?"neg":"pos"}">${fd(e.real-e.ideal)}</td><td class="${e.real-e.meta<0?"neg":"pos"}">${fd(e.real-e.meta)}</td><td><span class="pill ${tone(a)}">${arrow(a)}${fp(a)}</span></td><td>${fp(b)}</td><td class="l"><span class="bar"><i style="width:${Math.min(100,b||0)}%"></i></span></td><td>${fmt(e.ecom)}</td><td>${fmt(e.mm)}</td></tr>`;}
+  h+=`</tbody><tfoot><tr><td>TOTAL</td><td>${fmt(t.meta)}</td><td>${fmt(t.ideal)}</td><td>${fmt(t.real)}</td><td>${fd(t.real-t.ideal)}</td><td>${fd(t.real-t.meta)}</td><td>${arrow(pI)}${fp(pI)}</td><td>${fp(pM)}</td><td></td><td>${fmt(t.ecom)}</td><td>${fmt(t.mm)}</td></tr></tfoot></table></div></div>`;
+  h+=`<div class="grid2">
+   <div class="card"><h2>Realizado × meta por concessionária</h2><p class="hint">Barras agrupadas: realizado, meta ideal e meta do mês.</p><div class="chartbox"><canvas id="ch1"></canvas></div></div>
+   <div class="card"><h2>Atingimento da meta (%)</h2><p class="hint">Ordenado do maior para o menor. Linha de 100% = meta cumprida.</p><div class="chartbox"><canvas id="ch2"></canvas></div></div>
+   <div class="card"><h2>Desvio real por concessionária</h2><p class="hint">Cotas acima ou abaixo da meta do mês.</p><div class="chartbox"><canvas id="ch3"></canvas></div></div>
+   <div class="card"><h2>Participação no realizado</h2><p class="hint">Quanto cada concessionária pesa no total do grupo.</p><div class="chartbox"><canvas id="ch4"></canvas></div></div>`;
+  if(c.info.hasD){
+    h+=`<div class="card"><h2>Evolução acumulada × ritmo da meta</h2><p class="hint">Realizado acumulado do grupo contra o ritmo linear da meta (meta ÷ dias do mês).</p><div class="chartbox"><canvas id="ch5"></canvas></div></div>
+    <div class="card"><h2>Vendas por dia</h2><p class="hint">Cotas válidas por dia de venda (data do IHS, que é a data do borderô).</p><div class="chartbox"><canvas id="ch6"></canvas></div></div>`;
+  }
+  h+='</div>'; v.innerHTML=h;
+
+  const ink=css("--muted"),acc=css("--accent"),teal=css("--teal"),bad=css("--bad"),good=css("--good"),line=css("--line");
+  mkChart("ch1",{type:"bar",data:{labels:EMP,datasets:[
+    {label:"Realizado",data:EMP.map(k=>c.emp[k].real),backgroundColor:acc},
+    {label:"Meta ideal",data:EMP.map(k=>c.emp[k].ideal),backgroundColor:teal},
+    {label:"Meta",data:EMP.map(k=>c.emp[k].meta),backgroundColor:line}]},options:baseOpts()});
+  const rk=EMP.map(k=>({k,p:pct(c.emp[k].real,c.emp[k].meta)||0})).sort((a,b)=>b.p-a.p);
+  mkChart("ch2",{type:"bar",data:{labels:rk.map(x=>x.k),datasets:[{label:"% da meta",data:rk.map(x=>+x.p.toFixed(1)),backgroundColor:rk.map(x=>x.p>=100?good:x.p>=85?css("--warn"):bad)}]},
+    options:baseOpts({indexAxis:"y",plugins:{legend:{display:false},annotation:{}},scales:{x:{ticks:{color:ink,callback:v=>v+"%"},grid:{color:line},beginAtZero:true,suggestedMax:110},y:{ticks:{color:ink},grid:{display:false}}}}),
+    plugins:[{id:"l100",afterDraw(ch){const x=ch.scales.x.getPixelForValue(100),a=ch.chartArea,g=ch.ctx;g.save();g.strokeStyle=ink;g.setLineDash([5,4]);g.beginPath();g.moveTo(x,a.top);g.lineTo(x,a.bottom);g.stroke();g.restore();}}]});
+  mkChart("ch3",{type:"bar",data:{labels:EMP,datasets:[{label:"Desvio real",data:EMP.map(k=>c.emp[k].real-c.emp[k].meta),backgroundColor:EMP.map(k=>c.emp[k].real-c.emp[k].meta<0?bad:good)}]},options:baseOpts({plugins:{legend:{display:false}}})});
+  const pal=["#0b5cab","#14808a","#6a4fb3","#c0762b","#2f9e6b","#b34a7a","#7a8793","#3a78c9","#1f9aa6","#8a6bd1","#d9923f","#4cb88a","#cc6a97","#9aa5af"];
+  mkChart("ch4",{type:"doughnut",data:{labels:EMP.map(k=>k+" · "+NOME[k]),datasets:[{data:EMP.map(k=>c.emp[k].real),backgroundColor:pal,borderColor:css("--surface"),borderWidth:2}]},options:baseOpts({scales:{},plugins:{legend:{position:"right",labels:{color:ink,boxWidth:10,font:{size:11}}}}})});
+  if(c.info.hasD){
+    const nd=c.info.nd,lbl=c.serie.cum.map((_,i)=>String(i+1));
+    mkChart("ch5",{type:"line",data:{labels:lbl,datasets:[
+      {label:"Realizado acumulado",data:c.serie.cum,borderColor:acc,backgroundColor:acc,pointRadius:2,tension:.15,fill:false},
+      {label:"Ritmo linear da meta",data:lbl.map((_,i)=>+(t.meta*(i+1)/nd).toFixed(1)),borderColor:ink,borderDash:[6,4],pointRadius:0,fill:false},
+      {label:"Ritmo linear da meta ideal",data:lbl.map((_,i)=>+(t.ideal*(i+1)/nd).toFixed(1)),borderColor:teal,borderDash:[2,3],pointRadius:0,fill:false}]},options:baseOpts()});
+    mkChart("ch6",{type:"bar",data:{labels:lbl,datasets:[{label:"Cotas válidas no dia",data:c.serie.daily,backgroundColor:acc}]},options:baseOpts({plugins:{legend:{display:false}}})});
+  }
+}
+function renderMensal(){
+  const v=$("v-mensal"); const ids=Object.keys(S.months).sort();
+  if(!ids.length){v.innerHTML='<div class="empty">Sem meses carregados.</div>';return;}
+  const rows=ids.map(id=>({id,m:S.months[id],c:calc(S.months[id],S.modo)}));
+  let h='<div class="grid2" style="margin-top:0"><div class="card"><h2>Realizado × meta por mês</h2><p class="hint">Total do grupo. A linha mostra o % da meta atingido.</p><div class="chartbox"><canvas id="cm1"></canvas></div></div>';
+  h+='<div class="card"><h2>Realizado por concessionária ao longo dos meses</h2><p class="hint">Cotas válidas por mês, uma linha por concessionária.</p><div class="chartbox"><canvas id="cm2"></canvas></div></div></div>';
+  h+='<div class="card" style="margin-top:12px"><h2>Atingimento da meta por mês (%)</h2><p class="hint">Realizado ÷ meta do mês. Verde ≥ 100%, âmbar ≥ 85%, vermelho abaixo. Maio não consta na planilha de origem.</p><div class="tablewrap"><table class="heat"><thead><tr><th>Empresa</th>'+rows.map(r=>`<th>${MESES_PT[r.m.mes-1].slice(0,3)}/${String(r.m.ano).slice(2)}</th>`).join("")+'</tr></thead><tbody>';
+  for(const k of EMP){h+=`<tr><td class="emp"><b>${k}</b><span>${esc(NOME[k])}</span></td>`+rows.map(r=>{const e=r.c.emp[k],p=pct(e.real,e.meta);return `<td class="h"><span class="pill ${tone(p)}">${fp(p)}</span></td>`;}).join("")+'</tr>';}
+  h+='</tbody><tfoot><tr><td>TOTAL</td>'+rows.map(r=>`<td style="text-align:center">${fp(pct(r.c.tot.real,r.c.tot.meta))}</td>`).join("")+'</tr></tfoot></table></div></div>';
+  h+='<div class="card" style="margin-top:12px"><h2>Realizado, meta e e-commerce por mês</h2><div class="tablewrap"><table><thead><tr><th>Mês</th><th>Meta</th><th>Realizado</th><th>% da meta</th><th>E-commerce</th><th>Motores e Máq.</th></tr></thead><tbody>'+rows.map(r=>`<tr><td>${MESES_PT[r.m.mes-1]} ${r.m.ano}</td><td>${fmt(r.c.tot.meta)}</td><td><b>${fmt(r.c.tot.real)}</b></td><td>${fp(pct(r.c.tot.real,r.c.tot.meta))}</td><td>${fmt(r.c.tot.ecom)}</td><td>${fmt(r.c.tot.mm)}</td></tr>`).join("")+'</tbody></table></div></div>';
+  v.innerHTML=h;
+  const lbl=rows.map(r=>MESES_PT[r.m.mes-1].slice(0,3)+"/"+String(r.m.ano).slice(2));
+  const acc=css("--accent"),line=css("--line"),ink=css("--muted"),teal=css("--teal");
+  mkChart("cm1",{type:"bar",data:{labels:lbl,datasets:[
+    {type:"line",label:"% da meta",data:rows.map(r=>+(pct(r.c.tot.real,r.c.tot.meta)||0).toFixed(1)),borderColor:teal,backgroundColor:teal,yAxisID:"y2",tension:.2,pointRadius:3},
+    {label:"Realizado",data:rows.map(r=>r.c.tot.real),backgroundColor:acc},
+    {label:"Meta",data:rows.map(r=>r.c.tot.meta),backgroundColor:line}]},
+    options:baseOpts({scales:{x:{ticks:{color:ink},grid:{color:line}},y:{ticks:{color:ink},grid:{color:line},beginAtZero:true},y2:{position:"right",ticks:{color:ink,callback:v=>v+"%"},grid:{display:false},beginAtZero:true}}})});
+  const pal=["#0b5cab","#14808a","#6a4fb3","#c0762b","#2f9e6b","#b34a7a","#7a8793","#3a78c9","#1f9aa6","#8a6bd1","#d9923f","#4cb88a","#cc6a97","#9aa5af"];
+  mkChart("cm2",{type:"line",data:{labels:lbl,datasets:EMP.map((k,i)=>({label:k,data:rows.map(r=>r.c.emp[k].real),borderColor:pal[i],backgroundColor:pal[i],pointRadius:2,tension:.15,borderWidth:1.6}))},options:baseOpts({plugins:{legend:{position:"bottom",labels:{color:ink,boxWidth:10,font:{size:11}}}}})});
+}
+function renderMetas(){
+  const v=$("v-metas"),m=cur(); if(!m){v.innerHTML='<div class="empty">Selecione um mês.</div>';return;}
+  const dis=S.canWrite===false?" disabled":"";
+  let h=`<div class="card"><h2>Metas de ${MESES_PT[m.mes-1]} ${m.ano}</h2><p class="hint">Edite a meta e a meta ideal por concessionária. As alterações são gravadas e recalculam o painel.${m.metasRevisar?' <b class="neg">Metas copiadas do mês anterior: revise.</b>':''}</p>`;
+  h+=`<p class="hint">Atalho: meta ideal = meta × <input type="number" id="pi" value="96" min="0" max="100" step="0.5" style="width:70px"${dis}> % <button class="btn ghost" id="api" type="button"${dis}>Aplicar a todas</button></p>`;
+  h+='<div class="tablewrap"><table><thead><tr><th>Empresa</th><th>Meta</th><th>Meta ideal</th></tr></thead><tbody>';
+  for(const k of EMP)h+=`<tr><td class="emp"><b>${k}</b><span>${esc(NOME[k])}</span></td><td><input type="number" min="0" data-k="${k}" data-f="meta" value="${(m.meta||{})[k]||0}"${dis}></td><td><input type="number" min="0" data-k="${k}" data-f="ideal" value="${(m.ideal||{})[k]||0}"${dis}></td></tr>`;
+  const sm=EMP.reduce((s,k)=>s+((m.meta||{})[k]||0),0),si=EMP.reduce((s,k)=>s+((m.ideal||{})[k]||0),0);
+  h+=`</tbody><tfoot><tr><td>TOTAL</td><td id="tm">${fmt(sm)}</td><td id="ti">${fmt(si)}</td></tr></tfoot></table></div>`;
+  if(S.canWrite===false)h+='<div class="msg warn">Seu acesso é só de leitura: as metas não podem ser alteradas.</div>';
+  h+='</div>'; v.innerHTML=h;
+  const upd=()=>{const a=EMP.reduce((s,k)=>s+((m.meta||{})[k]||0),0),b=EMP.reduce((s,k)=>s+((m.ideal||{})[k]||0),0);$("tm").textContent=fmt(a);$("ti").textContent=fmt(b);};
+  v.querySelectorAll("input[data-k]").forEach(i=>i.addEventListener("input",()=>{
+    const f=i.dataset.f;(m[f]=m[f]||{})[i.dataset.k]=Math.max(0,Math.round(+i.value||0));m.metasRevisar=false;upd();persist(m.id,900);}));
+  const b=$("api"); if(b)b.onclick=()=>{const p=(+$("pi").value||0)/100;EMP.forEach(k=>{m.ideal=m.ideal||{};m.ideal[k]=Math.round(((m.meta||{})[k]||0)*p);});m.metasRevisar=false;persist(m.id,0);renderMetas();};
+}
+
+/* ---------- importação ---------- */
+function renderImportar(){
+  const v=$("v-importar"); const r=S.imp;
+  let h=`<div class="card"><h2>Importar planilhas do IHS</h2><p class="hint">Solte as 14 planilhas do “Relatório Estatístico de Vendas Diário” (uma por concessionária). A leitura é automática: o painel é atualizado assim que os arquivos são lidos. As planilhas são lidas no seu navegador e só os totais por empresa e por dia ficam guardados neste navegador; nenhum nome de cliente ou vendedor é guardado. Para compartilhar com outras pessoas, use “Exportar dados” e publique o arquivo dados-iniciais.json no repositório.</p>
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Selecionar planilhas do IHS"><b>Solte aqui os arquivos .xlsx</b><br><span style="color:var(--muted)">ou clique para escolher (AF, AN, BL, CA, CG, CO, JP, MA, OP, PB, PL, SG, TB, TF)</span><input id="fin" type="file" accept=".xlsx,.xls" multiple hidden></div>`;
+  if(r){
+    h+=`<div id="imres">`;
+    if(r.errors.length)h+=`<div class="msg bad">${r.errors.map(esc).join("<br>")}</div>`;
+    if(r.warns.length)h+=`<div class="msg warn">${r.warns.map(esc).join("<br>")}</div>`;
+    if(r.rows.length){
+      h+=`<div class="msg ok">${r.saved===true?"Painel atualizado e salvo neste navegador.":r.saved==="local"?"Painel atualizado nesta visita (sem gravação: armazenamento indisponível ou acesso só de leitura).":"Painel atualizado."} Mês: <b>${esc(r.mes)}</b> · extração IHS ${br(r.hdate)} ${esc((r.htime||"").slice(0,5))} · ${r.rows.reduce((s,x)=>s+x.n,0).toLocaleString("pt-BR")} linhas lidas.</div>`;
+      h+='<div class="tablewrap"><table><thead><tr><th>Empresa</th><th>Arquivo</th><th>Linhas</th><th>E-commerce</th><th>Motores e Máq.</th><th>Cotas válidas</th><th>Linhas repetidas</th></tr></thead><tbody>';
+      for(const x of r.rows)h+=`<tr><td class="emp"><b>${x.emp}</b><span>${esc(NOME[x.emp])}</span></td><td class="l">${esc(x.file)}</td><td>${fmt(x.n)}</td><td>${fmt(x.e)}</td><td>${fmt(x.m)}</td><td><b>${fmt(x.v)}</b></td><td>${x.dup?'<span class="neg">'+x.dup+'</span>':"0"}</td></tr>`;
+      const T=r.rows.reduce((s,x)=>({n:s.n+x.n,e:s.e+x.e,m:s.m+x.m,v:s.v+x.v}),{n:0,e:0,m:0,v:0});
+      h+=`</tbody><tfoot><tr><td>TOTAL</td><td class="l">${r.rows.length} de 14 arquivos</td><td>${fmt(T.n)}</td><td>${fmt(T.e)}</td><td>${fmt(T.m)}</td><td>${fmt(T.v)}</td><td></td></tr></tfoot></table></div>`;
+      h+=`<p style="margin-top:12px"><button class="btn" id="goP" type="button">Ver o painel</button></p>`;
+    }
+    h+=`</div>`;
+  }
+  h+=`</div><div class="card" style="margin-top:12px"><h2>Regras aplicadas na leitura</h2><ul class="rules">
+   <li>Cada linha da planilha é uma cota.</li>
+   <li>Fora da contagem: Origem do Contrato = <b>E-COMMERCE</b> e Plano = <b>Motores e Máquinas</b> (comparação sem acento e sem diferença de maiúsculas).</li>
+   <li>Data de referência: “Dt Venda” do IHS, que corresponde à data do borderô.</li>
+   <li>Corte: por padrão, vendas até o dia anterior à data de extração (D-1). Troque para “Todas as vendas” no topo para incluir o dia da extração.</li>
+   <li>Tipo de contrato N/R, origem “IHS (ON LINE)” e cotas sem grupo/cota entram normalmente na contagem.</li>
+   <li>O Power BI usa a data da venda e o IHS a do borderô, por isso as datas diferem entre os dois.</li></ul></div>`;
+  v.innerHTML=h;
+  const drop=$("drop"),fin=$("fin");
+  drop.onclick=()=>fin.click(); drop.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fin.click();}};
+  fin.onchange=()=>handleFiles([...fin.files]);
+  ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("on");}));
+  ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("on");}));
+  drop.addEventListener("drop",e=>handleFiles([...e.dataTransfer.files]));
+  const g=$("goP"); if(g)g.onclick=()=>setTab("painel");
+}
+async function readSheet(file){
+  const buf=await file.arrayBuffer(); const wb=XLSX.read(buf,{type:"array"}); const ws=wb.Sheets[wb.SheetNames[0]];
+  // algumas extrações do IHS trazem a dimensão da planilha errada: recalcula pelo conteúdo real
+  let r1=0,c1=0; for(const k in ws){const m=k.match(/^([A-Z]+)(\d+)$/);if(!m)continue;const col=XLSX.utils.decode_col(m[1]);r1=Math.max(r1,+m[2]-1);c1=Math.max(c1,col);}
+  ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:r1,c:c1}});
+  return parseAOA(XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null}));
+}
+async function handleFiles(files){
+  files=files.filter(f=>/\.xlsx?$/i.test(f.name)); if(!files.length)return;
+  const rep={errors:[],warns:[],rows:[],saved:null}; const parsed=[],byEmp={};
+  for(const f of files){
+    try{
+      const p=await readSheet(f); if(p.error){rep.errors.push(f.name+": "+p.error);continue;}
+      const a=empFromName(p.name),b=empFromFile(f.name); let emp=a||b;
+      if(a&&b&&a!==b)rep.warns.push(f.name+": o nome no arquivo ("+b+") difere da concessionária no relatório ("+a+"). Usada: "+a+".");
+      if(!emp){rep.errors.push(f.name+": concessionária não reconhecida.");continue;}
+      if(byEmp[emp]){rep.warns.push("Arquivo repetido para "+emp+": "+f.name+" substituiu "+byEmp[emp].file+".");}
+      byEmp[emp]={emp,file:f.name,rows:p.rows,hdate:p.hdate,htime:p.htime};
+    }catch(e){rep.errors.push(f.name+": não foi possível ler ("+(e&&e.message||e)+").");}
+  }
+  const list=Object.values(byEmp); if(!list.length){S.imp=rep;renderImportar();return;}
+  const miss=EMP.filter(k=>!byEmp[k]); if(miss.length)rep.warns.push("Faltam planilhas de: "+miss.join(", ")+". Essas empresas ficam sem vendas na importação.");
+  const hd=[...new Set(list.map(x=>x.hdate).filter(Boolean))].sort(); rep.hdate=hd[hd.length-1];
+  if(hd.length>1)rep.warns.push("As planilhas têm datas de extração diferentes ("+hd.map(br).join(", ")+"). Foi usada a mais recente.");
+  rep.htime=list.map(x=>x.htime).filter(Boolean).sort().pop();
+  const {dias,dup}=aggregate(list.map(x=>({emp:x.emp,rows:x.rows})));
+  for(const x of list){const a=aggregate([{emp:x.emp,rows:x.rows}]);let n=0,e=0,m=0,v=0;for(const d in a.dias){const z=a.dias[d][x.emp];n+=z[3];e+=z[1];m+=z[2];v+=z[0];}rep.rows.push({emp:x.emp,file:x.file,n,e,m,v,dup:dup[x.emp]||0});}
+  rep.rows.sort((a,b)=>EMP.indexOf(a.emp)-EMP.indexOf(b.emp));
+  // agrupa por mês de venda
+  const porMes={}; for(const d of Object.keys(dias)){const id=d.slice(0,7);(porMes[id]=porMes[id]||{})[d]=dias[d];}
+  const ids=Object.keys(porMes).sort(); if(ids.length>1)rep.warns.push("Há vendas de mais de um mês nas planilhas: "+ids.join(", ")+". Cada mês foi atualizado.");
+  const ref=Object.keys(S.months).sort();
+  for(const id of ids){
+    const [y,mo]=id.split("-").map(Number); const old=S.months[id];
+    let meta=old&&old.meta,ideal=old&&old.ideal,rev=false;
+    if(!meta){const prev=ref.filter(k=>k<id).pop();const p=prev&&S.months[prev];meta=p?{...p.meta}:{};ideal=p?{...p.ideal}:{};rev=true;}
+    const doc={id,ano:y,mes:mo,nome:MESES_PT[mo-1],meta,ideal,diario:porMes[id],extracao:{data:rep.hdate,hora:rep.htime||""},atualizadoEm:new Date().toISOString(),fonte:"IHS · Relatório Estatístico de Vendas Diário"};
+    if(rev)doc.metasRevisar=true; if(old&&old.metasRevisar&&!rev)doc.metasRevisar=true;
+    if(old&&old.diario){const merged={...old.diario};for(const d in porMes[id])merged[d]=porMes[id][d];/* dias reenviados substituem os antigos */doc.diario=merged;}
+    S.months[id]=doc;
+  }
+  S.sel=ids[ids.length-1]; rep.mes=MESES_PT[+S.sel.slice(5,7)-1]+" "+S.sel.slice(0,4);
+  if(S.months[S.sel].metasRevisar)rep.warns.push("Mês novo: as metas foram copiadas do mês anterior. Revise na aba Metas.");
+  let ok=!!S.db&&S.canWrite!==false;
+  if(ok){try{for(const id of ids){await S.db.doc("meses/"+id).set(JSON.parse(JSON.stringify(S.months[id])));}rep.saved=true;}catch(e){rep.saved="local";rep.warns.push("Não foi possível gravar ("+(e&&e.code||"erro")+").");}}
+  else rep.saved="local";
+  S.imp=rep; renderAll();
+}
+
+/* ---------- controle geral ---------- */
+function setTab(t){S.tab=t;renderAll();}
+function renderAll(){
+  renderMonths(); renderSub();
+  document.querySelectorAll("#tabs .tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.t===S.tab)));
+  for(const t of ["painel","mensal","importar","metas"])$("v-"+t).hidden=S.tab!==t;
+  document.querySelectorAll("#corte button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===S.modo)));
+  if(S.tab==="painel")renderPainel(); else if(S.tab==="mensal")renderMensal(); else if(S.tab==="importar")renderImportar(); else renderMetas();
+  const f=$("foot"); f.textContent=S.dbNote||"Fontes: planilhas COTAS VENDIDAS 2026 (meses fechados) e planilhas do IHS importadas (mês corrente). Meta e meta ideal editáveis na aba Metas.";
+}
+document.querySelectorAll("#tabs .tab").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+document.querySelectorAll("#corte button").forEach(b=>b.onclick=()=>{S.modo=b.dataset.m;try{localStorage.setItem("cv2r-modo",S.modo);}catch(e){}renderAll();});
+try{const m=localStorage.getItem("cv2r-modo");if(m==="D1"||m==="TUDO")S.modo=m;}catch(e){}
+if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>renderAll());
+new MutationObserver(()=>renderAll()).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+function onMonths(snap){
+  const mm={}; snap.docs.forEach(d=>{if(d.exists){const x=d.data();mm[d.id]={...x,id:d.id};}});
+  // meses importados nesta visita sem gravação continuam visíveis
+  for(const id in S.months)if(!mm[id]&&S.months[id].atualizadoEm)mm[id]=S.months[id];
+  S.months=mm; S.loaded=true;
+  if(!S.sel||!mm[S.sel])S.sel=Object.keys(mm).sort().pop()||null;
+  renderAll();
+}
+renderAll();
+(async()=>{
+  const KEY="cv2r-meses-v1"; let store={}; let lis=[];
+  const rd=()=>{try{const r=localStorage.getItem(KEY);return r?JSON.parse(r):null;}catch(e){return null;}};
+  const wr=()=>{try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){note("O navegador não permitiu gravar os dados localmente.");}};
+  const snap=()=>({metadata:{fromCache:false},docs:Object.keys(store).map(id=>({id,exists:true,data:()=>store[id]}))});
+  const notify=()=>lis.forEach(f=>f(snap()));
+  store=rd()||{};
+  try{ // dados-iniciais.json (opcional) vem do repositório; vale o registro mais recente de cada mês
+    const r=await fetch("dados-iniciais.json",{cache:"no-store"});
+    if(r.ok){const j=await r.json();const base=j.meses||j;
+      for(const id in base){const a=base[id],b=store[id];if(!b||(a.atualizadoEm||"")>(b.atualizadoEm||""))store[id]=a;}
+      wr();}
+  }catch(e){}
+  S.db={doc:p=>({set:async d=>{store[p.split("/")[1]]=d;wr();}}),collection:()=>({onSnapshot:cb=>{lis.push(cb);setTimeout(()=>cb(snap()),0);return()=>{lis=lis.filter(x=>x!==cb);};}})};
+  S.canWrite=true;
+  onMonths(snap());
+  const exp=document.getElementById("exp");
+  exp.onclick=()=>{const blob=new Blob([JSON.stringify({geradoEm:new Date().toISOString(),meses:store},null,1)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="dados-iniciais.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);};
+  note("");renderAll();
+})();
+</script>
+</html>
